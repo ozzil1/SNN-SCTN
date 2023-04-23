@@ -107,7 +107,7 @@ def load_audio_data(audio_path, clk_freq,
 
     return data
 
-
+#create a scaled resonator and copy all the parameters
 def copy_filter_hp_to_other_clock_frequency(clk_old, clk_new):
     copy_tree(f"../filters/clk_{clk_old}/parameters", f"../filters/clk_{clk_new}/parameters")
     clk_new_dirname = f'../filters/clk_{clk_new}/parameters'
