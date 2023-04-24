@@ -12,6 +12,8 @@ from matplotlib import pyplot as plt
 from snn.resonator import create_sine_wave, create_excitatory_inhibitory_resonator
 import gc
 
+#test git
+
 
 def test_frequency(network, test_size=10_000_000, start_freq=0, step=1 / 200000, clk_freq=1536000):
     batch_size = 50_000
