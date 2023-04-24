@@ -139,4 +139,4 @@ def copy_filter_hp_to_other_clock_frequency(clk_old, clk_new):
             json.dump(filter_parameters, f)
 
 #copy_filter_hp_to_other_clock_frequency(1536000, 15360)
-#generate_figures(15360, 2_000_000)
+generate_figures(15360, 2_000_000)
