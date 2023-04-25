@@ -12,7 +12,7 @@ from matplotlib import pyplot as plt
 from snn.resonator import create_sine_wave, create_excitatory_inhibitory_resonator
 import gc
 
-#from mental_attention_state_detection_to_spikes
+
 
 
 def test_frequency(network, test_size=10_000_000, start_freq=0, step=1 / 200000, clk_freq=1536000):
@@ -138,5 +138,5 @@ def copy_filter_hp_to_other_clock_frequency(clk_old, clk_new):
         with open(new_filter_file_name, 'w') as f:
             json.dump(filter_parameters, f)
 
-#copy_filter_hp_to_other_clock_frequency(1536000, 15360)
-generate_figures(15360, 2_000_000)
+#copy_filter_hp_to_other_clock_frequency(1536000, 30720)
+generate_figures(30720, 2_000_000)
