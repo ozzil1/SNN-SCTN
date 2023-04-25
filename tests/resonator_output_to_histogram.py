@@ -162,9 +162,9 @@ fig, ax = plt.subplots()
 for trial in os.listdir(IMU_data):
     example_spikes_channel = load_preprocessed_spikes(trial, channel)
     for f in ['0000.6', '0001.0', '001.39', '001.64', '001.93']:
-        IMU_bands = (all_spikes2bins(example_spikes_channel, window=500))[f]
-        if (len(IMU_bands)>1500):
-            IMU_bands=IMU_bands[0:1500]
+        IMU_bands = (all_spikes2bins(example_spikes_channel, window=250))[f]
+        if (len(IMU_bands)>10000):
+            IMU_bands=IMU_bands[0:10000]
         IMU_bands = np.trim_zeros(IMU_bands,'b')
         print(IMU_bands)
         #plot_heatmap(fig,ax,np.array([IMU_bands[channel]]), IMU_bands.keys(), annotate=False, title='Spikes spectogram')
@@ -172,7 +172,7 @@ for trial in os.listdir(IMU_data):
 # fig.colorbar(im, ax=ax, label='Interactive colorbar')
 # plt.show()
 
-        f, t, Sxx = signal.spectrogram(IMU_bands, fs=15360/500)
+        f, t, Sxx = signal.spectrogram(IMU_bands, fs=15360/250)
         ax.pcolormesh(t, f, Sxx, shading='gouraud')
 plt.ylim(top=8)
 #plt.xlim(top=150)
