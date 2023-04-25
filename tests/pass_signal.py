@@ -52,16 +52,6 @@ with tqdm(total=n_channels * n_resonators * n_trials) as pbar:
 
 
 
-
-
-
-
-
-
-
-
-
-
 # path = "C:\\Program Files (x86)\project\\tdcsfog"
 # first = True
 # #N = 97077  # number of max elements
