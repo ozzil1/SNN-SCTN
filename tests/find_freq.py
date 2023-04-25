@@ -10,7 +10,7 @@ from pathlib import Path
 
 from snn.resonator import create_excitatory_inhibitory_resonator
 
-path = "C:\\Program Files (x86)\project\\tdcsfog"
+path = "C:\\Program Files (x86)\project\\tdcsfog"  #local path for Shahar Halevy , change for your own
 
 i = 0
 fig, ax = plt.subplots()
@@ -25,29 +25,29 @@ clk_resonators = {
 n_trials=803
 n_channels = 3
 n_resonators =5
-with tqdm(total=n_channels * n_resonators * n_trials) as pbar:
-    for trial in os.listdir(path):
+with tqdm(total=n_channels * n_resonators * n_trials) as pbar:  #tqdm shows proccess precentage
+    for trial in os.listdir(path):                              #each trial is each experiment in the dataset
         f = os.path.join(path, trial)
         data = pd.read_csv(f, index_col=0)
         npArray = np.array(data)
-        for ch_i, ch_n in enumerate(channels):
-            ch_data = npArray[:, ch_i]
-            data_resampled = resample_signal(clk_freq / 2, fs, ch_data)
-            for clk_i, (clk_freq, list_of_f0) in enumerate(clk_resonators.items()):
-                spikes_folder = f'../datasets/IMU_data/{trial}/{ch_n}/{clk_freq}'
+        for ch_i, ch_n in enumerate(channels):                  #3 channels in IMU
+            ch_data = npArray[:, ch_i]                           #specific signal for the current channel
+            data_resampled = resample_signal(clk_freq / 2, fs, ch_data)  #signal convert: frequency from sampled signal to clk frequency
+            for clk_i, (clk_freq, list_of_f0) in enumerate(clk_resonators.items()): #we go through all clk_freq groups
+                spikes_folder = f'../datasets/IMU_data/{trial}/{ch_n}/{clk_freq}'      #folder path for saving dataset
                 if not os.path.exists(spikes_folder):
                     os.makedirs(spikes_folder)
-                for f_i, f0 in enumerate(list_of_f0):
-                    pbar.set_description(f',trial: {trial}, ch: {ch_i}/3 clk {clk_i}/1 f:{f_i}/5')
+                for f_i, f0 in enumerate(list_of_f0):                                #we go through all resonator frequency in each clk_freq group
+                    pbar.set_description(f',trial: {trial}, ch: {ch_i}/3 clk {clk_i}/1 f:{f_i}/5')  #tqdm shows proccess precentage
                     pbar.update()
                     spikes_file = f'{spikes_folder}/{f0}.npz'
                     if Path(spikes_file).is_file():
                         continue
-                    resonator = create_excitatory_inhibitory_resonator(
+                    resonator = create_excitatory_inhibitory_resonator(                          #create the resonator to generate output of the signal through it
                         freq0=f0,
                         clk_freq=clk_freq)
-                    resonator.log_out_spikes(-1)
-                    generate_spikes(resonator, data_resampled, spikes_file)
+                    resonator.log_out_spikes(-1)                                                 #the output is the last neuron's output
+                    generate_spikes(resonator, data_resampled, spikes_file)            #save the output through current resonator in datasets
 
 
 
