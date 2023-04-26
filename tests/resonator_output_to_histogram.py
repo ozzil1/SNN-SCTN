@@ -9,7 +9,6 @@ import matplotlib.pyplot as plt
 
 IMU_data = f'../datasets/IMU_data'
 
-trial = "0a89f859b5.csv"
 channel = 'AccV'
 
 
@@ -132,6 +131,7 @@ def plot_heatmap(fig,ax,heatmap_data, y_labels, annotate, title=None):
     #plt.show()
 
 
+##################################   plot by plot_heatmap  ##################################
 # fig, ax = plt.subplots()
 #
 # for trial in os.listdir(IMU_data):
@@ -143,39 +143,56 @@ def plot_heatmap(fig,ax,heatmap_data, y_labels, annotate, title=None):
 #         IMU_bands=IMU_bands[0:1500]
 #     IMU_bands = np.trim_zeros(IMU_bands,'b')
 #     print(IMU_bands)
-#     #plot_heatmap(fig,ax,np.array([IMU_bands[channel]]), IMU_bands.keys(), annotate=False, title='Spikes spectogram')
+#     plot_heatmap(fig,ax,[IMU_bands], IMU_bands.keys(), annotate=False, title='Spikes spectogram')
 #
 # # fig.colorbar(im, ax=ax, label='Interactive colorbar')
 # # plt.show()
 #
-#     f, t, Sxx = signal.spectrogram(IMU_bands, fs=15360/500)
-#     ax.pcolormesh(t, f, Sxx, shading='gouraud')
 # plt.ylim(top=8)
 # #plt.xlim(top=150)
 # plt.yticks(np.arange(0,15,1))
 # #plt.hlines(np.arange(0,15,1),xmin=0,xmax=150,colors='w',linewidth=0.2)
 # plt.show()
 
+#####################################################################################################
 
-fig, ax = plt.subplots()
+########################   plot spectogram of data not averaging the frequencies  ###################
+def plot_spectogram(IMU_data):
+    fig, ax = plt.subplots()
 
-for trial in os.listdir(IMU_data):
-    example_spikes_channel = load_preprocessed_spikes(trial, channel)
-    for f in ['0000.6', '0001.0', '001.39', '001.64', '001.93']:
-        IMU_bands = (all_spikes2bins(example_spikes_channel, window=250))[f]
-        if (len(IMU_bands)>10000):
-            IMU_bands=IMU_bands[0:10000]
-        IMU_bands = np.trim_zeros(IMU_bands,'b')
-        print(IMU_bands)
-        #plot_heatmap(fig,ax,np.array([IMU_bands[channel]]), IMU_bands.keys(), annotate=False, title='Spikes spectogram')
+    for trial in os.listdir(IMU_data):
+        example_spikes_channel = load_preprocessed_spikes(trial, channel)
+        for f in ['0000.6', '0001.0', '001.39', '001.64', '001.93']:
+            IMU_bands = (all_spikes2bins(example_spikes_channel, window=60))[f]
+            #IMU_bands = np.trim_zeros(IMU_bands,'b')
+            print(np.array(IMU_bands))
 
-# fig.colorbar(im, ax=ax, label='Interactive colorbar')
-# plt.show()
+            f, t, Sxx = signal.spectrogram(IMU_bands, fs=(15360/2)/60)
+            ax.pcolormesh(t, f, Sxx, shading='gouraud')
+    plt.ylim(top=8)
+    plt.yticks(np.arange(0,25,1))
+    plt.xlim(left=0,right=100)
+    plt.show()
 
-        f, t, Sxx = signal.spectrogram(IMU_bands, fs=15360/250)
-        ax.pcolormesh(t, f, Sxx, shading='gouraud')
-plt.ylim(top=8)
-#plt.xlim(top=150)
-plt.yticks(np.arange(0,15,1))
-#plt.hlines(np.arange(0,15,1),xmin=0,xmax=150,colors='w',linewidth=0.2)
-plt.show()
+#####################################################################################################
+
+
+########################  plot fft summed ################################
+def plot_fft_summed(IMU_data):
+    fft1_sum=[0]*4682
+    for trial in os.listdir(IMU_data):
+        example_spikes_channel = load_preprocessed_spikes(trial, channel)
+        for f in ['0000.6', '0001.0', '001.39', '001.64', '001.93']:
+            IMU_bands = (all_spikes2bins(example_spikes_channel, window=122))[f]
+            if (len(IMU_bands)>4682):
+                IMU_bands=IMU_bands[0:4682]
+            if len(IMU_bands) < 4682:
+                np.concatenate((IMU_bands, np.array([0] * (4682 - len(IMU_bands)))), axis=0)
+            fft1_sum += np.fft.fft(IMU_bands, 4682)
+            print(fft1_sum)
+
+    fftfreq = np.fft.fftfreq(4682, 1/ 128)
+    plt.ylabel("Amp")
+    plt.xlabel("Frequency")
+    plt.plot(fftfreq,abs(fft1_sum))
+    plt.show()
