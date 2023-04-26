@@ -12,9 +12,6 @@ from matplotlib import pyplot as plt
 from snn.resonator import create_sine_wave, create_excitatory_inhibitory_resonator
 import gc
 
-
-
-
 def test_frequency(network, test_size=10_000_000, start_freq=0, step=1 / 200000, clk_freq=1536000):
     batch_size = 50_000
     shift = 0
@@ -83,6 +80,8 @@ def custom_resonator_output_spikes(
     elif plot:
         plt.show()
 
+    return my_resonator
+
 """
 clk_filters = {
     153600: (60,65),
@@ -113,12 +112,13 @@ def generate_figures(clk_freq, step):
             continue
         f0 = float(fname[2:-5])
         print(f0)
-        custom_resonator_output_spikes(
+        resonator = custom_resonator_output_spikes(
             f0,
             clk_freq=clk_freq,
             step=1/step,
             save_figure=True
         )
+
         gc.collect()
 
 def copy_filter_hp_to_other_clock_frequency(clk_old, clk_new):
@@ -138,5 +138,8 @@ def copy_filter_hp_to_other_clock_frequency(clk_old, clk_new):
         with open(new_filter_file_name, 'w') as f:
             json.dump(filter_parameters, f)
 
-#copy_filter_hp_to_other_clock_frequency(1536000, 30720)
-generate_figures(30720, 2_000_000)
+
+for i in range(4):
+    if i != 0:
+        #copy_filter_hp_to_other_clock_frequency(1536000, 61440 * i)
+        generate_figures(61440 * i, 2_000_000)
