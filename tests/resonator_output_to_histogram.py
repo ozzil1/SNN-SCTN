@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 
 IMU_data = f'../datasets/IMU_data'
 
-channel = 'AccV'
+channel = 'AccAP'
 
 
 def load_preprocessed_spikes(trial, channel):
@@ -157,7 +157,7 @@ def plot_heatmap(fig,ax,heatmap_data, y_labels, annotate, title=None):
 #####################################################################################################
 
 ########################   plot spectogram of data not averaging the frequencies  ###################
-def plot_spectogram(IMU_data):
+def plot_spectogram(IMU_data,channel):
     fig, ax = plt.subplots()
 
     for trial in os.listdir(IMU_data):
@@ -178,7 +178,7 @@ def plot_spectogram(IMU_data):
 
 
 ########################  plot fft summed ################################
-def plot_fft_summed(IMU_data):
+def plot_fft_summed(IMU_data,channel):
     fft1_sum=[0]*4682
     for trial in os.listdir(IMU_data):
         example_spikes_channel = load_preprocessed_spikes(trial, channel)
@@ -196,3 +196,19 @@ def plot_fft_summed(IMU_data):
     plt.xlabel("Frequency")
     plt.plot(fftfreq,abs(fft1_sum))
     plt.show()
+
+def plot_single_signal_spectogram(IMU_data,trial,channel):
+    fig, ax = plt.subplots()
+    example_spikes_channel = load_preprocessed_spikes(trial, channel)
+    for f in ['0000.6', '0001.0', '001.39', '001.64', '001.93']:
+        IMU_bands = (all_spikes2bins(example_spikes_channel, window=60))[f]
+
+        f, t, Sxx = signal.spectrogram(IMU_bands, fs=(15360/2)/60)
+        ax.pcolormesh(t, f, Sxx, shading='gouraud')
+    plt.ylim(top=8)
+    plt.yticks(np.arange(0,25,1))
+    #plt.xlim(left=0,right=100)
+    plt.show()
+
+trial='0a89f859b5.csv'
+plot_single_signal_spectogram(IMU_data,trial,channel)

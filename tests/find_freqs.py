@@ -67,13 +67,14 @@ def plot_fft_summed_input(path):
     plt.show()
 
 
-def plot_spectogram_input(path):
+def plot_spectogram_input(path,ch_n):
     fig, ax = plt.subplots()
     for filename in os.listdir(path):
         f = os.path.join(path, filename)
         data = pd.read_csv(f, index_col=0, compression='gzip')
         npArray = np.array(data)
-        sig1 = npArray[:, 0]
+
+        sig1 = npArray[:, ch_n]
         f, t, Sxx = signal.spectrogram(sig1, fs=128)
         ax.pcolormesh(t, f, Sxx, shading='gouraud')
 
@@ -82,8 +83,23 @@ def plot_spectogram_input(path):
     plt.xlim(left=0, right=100)
     plt.show()
 
+def plot_single_signal_spectogram_input(path,filename,ch_n):
+    fig, ax = plt.subplots()
+    f = os.path.join(path, filename)
+    data = pd.read_csv(f, index_col=0, compression='gzip')
+    npArray = np.array(data)
 
+    sig1 = npArray[:, ch_n]
+    f, t, Sxx = signal.spectrogram(sig1, fs=128)
+    ax.pcolormesh(t, f, Sxx, shading='gouraud')
 
+    plt.ylim(top=8)
+    plt.yticks(np.arange(0, 25, 1))
+    #plt.xlim(left=0, right=100)
+    plt.show()
+
+trial='0a89f859b5.csv'
+plot_single_signal_spectogram_input(path,trial,2)
 # plt.plot(fftfreq,fft2)
 # plt.plot(fftfreq,abs(fft1_sum))
 # plt.plot(np.fft.fftfreq(N, 1 / 128),abs(np.fft.fft(sig1)))

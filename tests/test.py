@@ -80,7 +80,6 @@ def custom_resonator_output_spikes(
     elif plot:
         plt.show()
 
-    return my_resonator
 
 """
 clk_filters = {
