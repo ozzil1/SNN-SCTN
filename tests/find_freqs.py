@@ -98,8 +98,9 @@ def plot_single_signal_spectogram_input(path,filename,ch_n):
     #plt.xlim(left=0, right=100)
     plt.show()
 
-trial='0a89f859b5.csv'
-plot_single_signal_spectogram_input(path,trial,2)
+trial='0b2b9bc455.csv'
+plot_single_signal_spectogram_input(path,trial,1)
+#plot_spectogram_input(path,0)
 # plt.plot(fftfreq,fft2)
 # plt.plot(fftfreq,abs(fft1_sum))
 # plt.plot(np.fft.fftfreq(N, 1 / 128),abs(np.fft.fft(sig1)))

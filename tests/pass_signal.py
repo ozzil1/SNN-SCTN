@@ -10,7 +10,7 @@ from pathlib import Path
 
 from snn.resonator import create_excitatory_inhibitory_resonator
 
-path = "../datasets/kaggle_data/tdcsfog/"
+path = "../datasets/kaggle_data/signal/"
 i = 0
 fig, ax = plt.subplots()
 
@@ -18,15 +18,15 @@ clk_freq=15360
 fs=128
 channels = ['AccV', 'AccML', 'AccAP']
 clk_resonators = {
-    #15360: ['0.6', '1.0', '1.39', '1.64', '1.93'],
-    30720: ['2.36','2.78','3.28','3.86']
-    # 61440: ['4.0','4.72','5.56','6.56','7.72'],
-    # 122880: ['8.0','9.44','11.12','13.12', '15.44'],
+    15360: ['0.6', '1.0', '1.39', '1.64', '1.93'],
+    30720: ['2.36','2.78','3.28','3.86'],
+    61440: ['4.0','4.72','5.56','6.56','7.72'],
+    122880: ['8.0','9.44','11.12','13.12', '15.44'],
 
 
 
 }
-n_trials=803
+n_trials=1
 n_channels = 3
 n_resonators =19
 
@@ -43,8 +43,10 @@ def pass_signal_through_resonators(channels,clk_resonators,path):
             npArray = np.array(data)
             for ch_i, ch_n in enumerate(channels):                  #3 channels in IMU
                 ch_data = npArray[:, ch_i]                           #specific signal for the current channel
+                ch_data=ch_data/10 + 5
+                print(ch_data)
                 for clk_i, (clk_freq, list_of_f0) in enumerate(clk_resonators.items()): #we go through all clk_freq groups
-                    data_resampled = resample_signal(clk_freq / 2, fs, ch_data)  # signal convert: frequency from sampled signal to clk frequency
+                    data_resampled = resample_signal(300_000, fs, ch_data)  # signal convert: frequency from sampled signal to clk frequency
                     spikes_folder = f'../datasets/IMU_data/{trial}/{ch_n}/{clk_freq}'      #folder path for saving dataset
                     if not os.path.exists(spikes_folder):
                         os.makedirs(spikes_folder)

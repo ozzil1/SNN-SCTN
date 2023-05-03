@@ -4,12 +4,12 @@ import pandas as pd
 from spicy import signal
 from scipy.io import loadmat
 from scipy.signal import butter, filtfilt
-
+from scripts.mental_attention_state_detection_to_spikes import resample_signal
 import matplotlib.pyplot as plt
 
 IMU_data = f'../datasets/IMU_data'
 
-channel = 'AccAP'
+channel = 'AccV'
 
 
 def load_preprocessed_spikes(trial, channel):
@@ -45,8 +45,33 @@ def all_spikes2bins(full_spikes_data, window=195_000):
 
 def normalize_arr(arr):
     # return arr
-    return (arr - min(arr)) / (max(arr) - min(arr))
+    arr2= (arr - min(arr)) / (max(arr) - min(arr))
+    print(sorted(arr)[1])
+    print(sorted(arr)[0])
+    return arr2
 
+def normalize_arr2(arr):
+    # return arr
+    arr2= (arr-sorted(arr)[1]) / (max(arr) - sorted(arr)[1])
+    print((sorted(arr)[1],sum(arr)/len(arr),max(arr)))
+    print(sum(arr2)/len(arr2))
+    return arr2
+
+
+def spikes_data2imu_bands(spikes_data):
+    return {
+        '1': sum(normalize_arr2(spikes_data[f])
+                    for f in ['0001.0']) / 1,
+        '2': sum(normalize_arr2(spikes_data[f])
+                 for f in ['001.93', '002.36'])/1,
+        '3': sum(normalize_arr2(spikes_data[f])
+                 for f in ['002.78', '003.28',])/ 2,
+        '4': sum(normalize_arr2(spikes_data[f])
+                 for f in ['0004.0', '004.72', '005.56', '006.56']) / 4,
+        '5': sum(normalize_arr2(spikes_data[f])
+                 for f in ['0008.0', '009.44', '011.12','015.44']) / 4
+
+             }
 
 def spikes_data2eeg_bands(spikes_data):
     return {
@@ -62,16 +87,6 @@ def spikes_data2eeg_bands(spikes_data):
                         # for f in ['36.259', '40.791', '45.324', '53.482', '63.000']) / 5
                         for f in ['36.259', '40.791']) / 2
     }
-
-
-def spikes_data2imu_bands(spikes_data):
-    return {
-        'AccV': sum(normalize_arr(spikes_data[f])
-                    for f in ['0000.6', '0001.0', '001.39', '001.64', '001.93']) / 5
-
-    }
-
-
 def normalize_columns(arr):
     """
     Normalizes each column of a 2D NumPy array so that the minimum value in each column is 0 and the maximum is 1.
@@ -100,12 +115,12 @@ def spikes_dict2spectogram(
     spikes_heatmap = spikes_heatmap.reindex(sorted(spikes_heatmap.columns), axis=1).T
     spikes_heatmap_data = spikes_heatmap.to_numpy()
 
-    spikes_heatmap_data = spikes_heatmap_data
+    #spikes_heatmap_data = spikes_heatmap_data[0]
     return normalize_columns(spikes_heatmap_data)
 
 
-def plot_heatmap(fig,ax,heatmap_data, y_labels, annotate, title=None):
-    #fig, ax = plt.subplots(figsize=(14, 5))
+def plot_heatmap(heatmap_data, y_labels, annotate, title=None):
+    fig, ax = plt.subplots(figsize=(14, 5))
     im = ax.imshow(
         heatmap_data,
         cmap='jet',
@@ -120,41 +135,18 @@ def plot_heatmap(fig,ax,heatmap_data, y_labels, annotate, title=None):
     if annotate:
         for i in range(len(heatmap_data)):
             for j in range(len(heatmap_data[i])):
-                text = ax.text(j, i, f'{heatmap_data[i, j]:.4f}',
+                text = ax.text(j, i,  f'{heatmap_data[i, j]:.4f}',
                                rotation=90,
                                ha="center", va="center", color="white")
 
     if title:
         ax.set_title(title)
     fig.tight_layout()
-    #fig.colorbar(im, ax=ax, label='Interactive colorbar')
-    #plt.show()
+    fig.colorbar(im, ax=ax, label='Interactive colorbar')
+    plt.show()
 
 
-##################################   plot by plot_heatmap  ##################################
-# fig, ax = plt.subplots()
-#
-# for trial in os.listdir(IMU_data):
-#     example_spikes_channel = load_preprocessed_spikes(trial, channel)
-#
-#     IMU_bands = spikes_data2imu_bands(all_spikes2bins(example_spikes_channel, window=500))
-#     IMU_bands = IMU_bands[channel]
-#     if (len(IMU_bands)>1500):
-#         IMU_bands=IMU_bands[0:1500]
-#     IMU_bands = np.trim_zeros(IMU_bands,'b')
-#     print(IMU_bands)
-#     plot_heatmap(fig,ax,[IMU_bands], IMU_bands.keys(), annotate=False, title='Spikes spectogram')
-#
-# # fig.colorbar(im, ax=ax, label='Interactive colorbar')
-# # plt.show()
-#
-# plt.ylim(top=8)
-# #plt.xlim(top=150)
-# plt.yticks(np.arange(0,15,1))
-# #plt.hlines(np.arange(0,15,1),xmin=0,xmax=150,colors='w',linewidth=0.2)
-# plt.show()
 
-#####################################################################################################
 
 ########################   plot spectogram of data not averaging the frequencies  ###################
 def plot_spectogram(IMU_data,channel):
@@ -197,18 +189,126 @@ def plot_fft_summed(IMU_data,channel):
     plt.plot(fftfreq,abs(fft1_sum))
     plt.show()
 
-def plot_single_signal_spectogram(IMU_data,trial,channel):
+########################  plot_single_signal_spectogram ################################
+def plot_single_signal_spectogram(trial,channel):
     fig, ax = plt.subplots()
+    Sxx_sum=0
     example_spikes_channel = load_preprocessed_spikes(trial, channel)
+    #IMU_bands=spikes_data2imu_bands(example_spikes_channel)
     for f in ['0000.6', '0001.0', '001.39', '001.64', '001.93']:
         IMU_bands = (all_spikes2bins(example_spikes_channel, window=60))[f]
-
         f, t, Sxx = signal.spectrogram(IMU_bands, fs=(15360/2)/60)
-        ax.pcolormesh(t, f, Sxx, shading='gouraud')
+        Sxx_sum+=Sxx
+
+    for f in ['002.36', '002.78', '003.28', '003.86']:
+        IMU_bands = (all_spikes2bins(example_spikes_channel, window=120))[f]
+        f, t, Sxx = signal.spectrogram(IMU_bands, fs=(30720/2)/120)
+        Sxx_sum += Sxx
+        #ax.pcolormesh(t, f, Sxx, shading='gouraud')
+    for f in ['0004.0', '004.72', '005.56', '006.56','007.72']:
+        IMU_bands = (all_spikes2bins(example_spikes_channel, window=240))[f]
+        f, t, Sxx = signal.spectrogram(IMU_bands, fs=(61440/2)/240)
+        Sxx_sum += Sxx
+        #ax.pcolormesh(t, f, Sxx, shading='gouraud')
+    for f in ['0008.0', '009.44', '011.12', '013.12','015.44']:
+        IMU_bands = (all_spikes2bins(example_spikes_channel, window=480))[f]
+        f, t, Sxx = signal.spectrogram(IMU_bands, fs=(122880/2)/480)
+        Sxx_sum += Sxx
+        #ax.pcolormesh(t, f, Sxx, shading='gouraud')
+    ax.pcolormesh(t, f, Sxx_sum, shading='gouraud')
     plt.ylim(top=8)
     plt.yticks(np.arange(0,25,1))
     #plt.xlim(left=0,right=100)
     plt.show()
 
-trial='0a89f859b5.csv'
-plot_single_signal_spectogram(IMU_data,trial,channel)
+
+
+def plot_single_signal_heatmap( trial, channel):
+    spikes_data={}
+    example_spikes_channel = load_preprocessed_spikes(trial, channel)
+    for f in ['0000.6', '0001.0', '001.39', '001.64', '001.93']:
+        bin = (all_spikes2bins(example_spikes_channel, window=240))[f]
+        spikes_data[f] = bin
+        length = len(bin)
+    for f in ['002.36', '002.78', '003.28', '003.86']:
+        bin = (all_spikes2bins(example_spikes_channel, window=240))[f]
+        data_resampled = resample_signal(32, 128/2, bin)
+        if len(data_resampled<length):
+            data_resampled=np.concatenate((data_resampled,(length-len(data_resampled))*[0]))
+        if len(data_resampled>length):
+            data_resampled=data_resampled[0:length]
+        spikes_data[f] = data_resampled
+    for f in ['0004.0', '004.72', '005.56', '006.56']:
+        bin = (all_spikes2bins(example_spikes_channel, window=240))[f]
+        data_resampled = resample_signal(32, 128, bin)
+        if len(data_resampled<length):
+            data_resampled=np.concatenate((data_resampled,(length-len(data_resampled))*[0]))
+        if len(data_resampled>length):
+            data_resampled=data_resampled[0:length]
+        spikes_data[f] = data_resampled
+    for f in ['0008.0', '009.44', '011.12', '013.12','015.44']:
+        bin = (all_spikes2bins(example_spikes_channel, window=240))[f]
+        data_resampled = resample_signal(32, 128*2, bin)
+        if len(data_resampled<length):
+            data_resampled=np.concatenate((data_resampled,(length-len(data_resampled))*[0]))
+        if len(data_resampled>length):
+            data_resampled=data_resampled[0:length]
+        spikes_data[f] = data_resampled
+
+    IMU_bands = spikes_data2imu_bands(spikes_data)
+    spikes_spectogram = spikes_dict2spectogram(IMU_bands)
+    # bins = int(spikes_spectogram.shape[1])
+    plot_heatmap(spikes_spectogram, IMU_bands.keys(), annotate=False, title='Spikes spectogram')
+
+def plot_single_signal_heatmap2(trial, channel):
+    spikes_data = {}
+    example_spikes_channel = load_preprocessed_spikes(trial, channel)
+    for f in ['0000.6', '0001.0', '001.39', '001.64', '001.93']:
+        bin = (all_spikes2bins(example_spikes_channel, window=60))[f]
+        spikes_data[f] = bin
+        length = len(bin)
+    for f in ['002.36', '002.78', '003.28', '003.86']:
+        bin = (all_spikes2bins(example_spikes_channel, window=120))[f]
+        # data_resampled = resample_signal(32, 128 / 2, bin)
+        # if len(data_resampled < length):
+        #     data_resampled = np.concatenate((data_resampled, (length - len(data_resampled)) * [0]))
+        # if len(data_resampled > length):
+        #     data_resampled = data_resampled[0:length]
+        spikes_data[f] = bin
+    for f in ['0004.0', '004.72', '005.56', '006.56']:
+        bin = (all_spikes2bins(example_spikes_channel, window=240))[f]
+        # data_resampled = resample_signal(32, 128, bin)
+        # if len(data_resampled < length):
+        #     data_resampled = np.concatenate((data_resampled, (length - len(data_resampled)) * [0]))
+        # if len(data_resampled > length):
+        #     data_resampled = data_resampled[0:length]
+        spikes_data[f] = bin
+    for f in ['0008.0', '009.44', '011.12', '013.12', '015.44']:
+        bin = (all_spikes2bins(example_spikes_channel, window=480))[f]
+        # data_resampled = resample_signal(32, 128 * 2, bin)
+        # if len(data_resampled < length):
+        #     data_resampled = np.concatenate((data_resampled, (length - len(data_resampled)) * [0]))
+        # if len(data_resampled > length):
+        #     data_resampled = data_resampled[0:length]
+        spikes_data[f] = bin
+
+    IMU_bands = spikes_data2imu_bands(spikes_data)
+    spikes_spectogram = spikes_dict2spectogram(IMU_bands)
+    # bins = int(spikes_spectogram.shape[1])
+    plot_heatmap(spikes_spectogram, IMU_bands.keys(), annotate=False, title='Spikes spectogram')
+
+
+
+channel='AccV'
+trial='0b2b9bc455.csv'   ######## working on this trial
+#plot_single_signal_spectogram(trial,channel)
+plot_single_signal_heatmap(trial,channel)
+
+
+
+#
+# example_spikes_channel = load_preprocessed_spikes(trial, channel)
+# eeg_bands = spikes_data2imu_bands(all_spikes2bins(example_spikes_channel, window=50))
+# spikes_spectogram = spikes_dict2spectogram(eeg_bands)
+# bins=int(spikes_spectogram.shape[1])
+# plot_heatmap(spikes_spectogram, eeg_bands.keys(), annotate=False, title='Spikes spectogram')
