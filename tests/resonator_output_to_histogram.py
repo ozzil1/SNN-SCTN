@@ -2,14 +2,13 @@ import os
 import numpy as np
 import pandas as pd
 from spicy import signal
+from spicy import ndimage
 from scipy.io import loadmat
 from scipy.signal import butter, filtfilt
-
+from scripts.mental_attention_state_detection_to_spikes import resample_signal
 import matplotlib.pyplot as plt
 
-IMU_data = f'../datasets/IMU_data'
 
-channel = 'AccAP'
 
 
 def load_preprocessed_spikes(trial, channel):
@@ -197,18 +196,103 @@ def plot_fft_summed(IMU_data,channel):
     plt.plot(fftfreq,abs(fft1_sum))
     plt.show()
 
-def plot_single_signal_spectogram(IMU_data,trial,channel):
+def plot_single_signal_spectogram(IMU_data,trial,channel, clk_resonators,clk_resonators_not_modified):
     fig, ax = plt.subplots()
     example_spikes_channel = load_preprocessed_spikes(trial, channel)
-    for f in ['0000.6', '0001.0', '001.39', '001.64', '001.93']:
-        IMU_bands = (all_spikes2bins(example_spikes_channel, window=60))[f]
+    i = 1
+    j = 0
+    flag = True
+    f_list = []
+    rows = 19 #freq number
+    col = 1947360 #IMU_bands len
+    mat = np.empty([rows,col])
+    #for f in example_spikes_channel:
+    for clk in clk_resonators:
+        i *= 2
+        for f in clk_resonators[clk]:
+            print(str(float(f)))
+            data = np.load(os.path.join('../datasets/IMU_data', trial, 'Accv', str(clk), f'{str(float(f))}.npz'))
+            np_data = data['spikes']
+            resampled = resample_signal(122880, clk, data['spikes'])
+            #reshaped = resampled.reshape(-1,120)
+            #sums = reshaped.sum(axis=1)
+            f_list.append(f)
+            #print(f)
+            IMU_bands = (all_spikes2bins(example_spikes_channel, window=60*16))[f]
+            #print(IMU_bands.shape)
+            mat[j] = resampled
+            data.close()
+            j += 1
+            #f, t, Sxx = signal.spectrogram(IMU_bands, fs=128)#fs=(clk/2)/(60*16))
+            #print("Sxx:", Sxx.shape, type(Sxx))
+            #print("t", t.shape)
+            #print("f", f.shape, f)
+            # if(flag):
+            #     sum_sxx = Sxx
+            #     flag = False
+            # else:
+            #     sum_sxx += Sxx
+                #print(sum_sxx.shape)
+            # kernel = np.array([[0.5, 0.5, 0.5, 0.5, 0.5],
+            #                    [0.5, 0.7, 0.7, 0.7, 0.5],
+            #                    [0.7, 1, 1, 1, 0.7],
+            #                    [0.5, 0.7, 0.7, 0.7, 0.5],
+            #                    [0.5, 0.5, 0.5, 0.5, 0.5]])
+            plt.plot(resampled, [f]*len(resampled), '|', markersize=10)
 
-        f, t, Sxx = signal.spectrogram(IMU_bands, fs=(15360/2)/60)
-        ax.pcolormesh(t, f, Sxx, shading='gouraud')
-    plt.ylim(top=8)
-    plt.yticks(np.arange(0,25,1))
+    #pad = ((2,2),(0,0))
+    #padded_mat = np.pad(mat, pad, mode='constant')
+    #conv = signal.convolve2d(padded_mat, kernel, mode='valid', )
+    #result = conv[:, ::5]
+    print(f_list)
+    t = np.arange(389472) #2029
+    #im = ax.pcolormesh(t, f_list, result, shading='gouraud')
+    #plt.colorbar(im)
+   # plt.ylim(bottom=0, top=10)
+   # plt.yticks(np.arange(0,15,1))
     #plt.xlim(left=0,right=100)
     plt.show()
 
-trial='0a89f859b5.csv'
-plot_single_signal_spectogram(IMU_data,trial,channel)
+trial='0b2b9bc455.csv'
+IMU_data = f'../datasets/IMU_data'
+channels = ['AccV', 'AccML', 'AccAP']
+channel = 'AccV'
+clk_resonators = {
+    15360: ['0000.6', '0001.0', '001.39', '001.64', '001.93'],
+    30720: ['002.36','002.78','003.28','003.86'],
+    61440: ['0004.0','004.72','005.56','006.56','007.72'],
+    122880: ['0008.0','009.44','011.12','013.12', '015.44']
+}
+clk_resonators_not_modified = {
+    15360: ['0.6', '1.0', '1.39', '1.64', '1.93'],
+    30720: ['2.36','2.78','3.28','3.86'],
+    61440: ['4.0','4.72','5.56','6.56','7.72'],
+    122880: ['8.0','9.44','11.12','13.12', '15.44']
+}
+plot_single_signal_spectogram(IMU_data,trial,channel, clk_resonators,clk_resonators_not_modified)
+
+
+# fig, ax = plt.subplots()
+# #
+# # for trial in os.listdir(IMU_data):
+# example_spikes_channel = load_preprocessed_spikes(trial, channel)
+#
+# IMU_bands = spikes_data2imu_bands(all_spikes2bins(example_spikes_channel, window=500))
+# IMU_bands = IMU_bands[channel]
+# #     if (len(IMU_bands)>1500):
+# #         IMU_bands=IMU_bands[0:1500]
+# #     IMU_bands = np.trim_zeros(IMU_bands,'b')
+# #     print(IMU_bands)
+# plot_heatmap(fig,ax,[IMU_bands], clk_resonators, annotate=False, title='Spikes spectogram')
+# #
+# #fig.colorbar(ax, ax=ax, label='Interactive colorbar')
+# # # plt.show()
+# #
+# plt.ylim(top=8)
+# # #plt.xlim(top=150)
+# # plt.yticks(np.arange(0,15,1))
+# # #plt.hlines(np.arange(0,15,1),xmin=0,xmax=150,colors='w',linewidth=0.2)
+# plt.show()
+
+
+
