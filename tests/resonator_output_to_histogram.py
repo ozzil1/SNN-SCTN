@@ -50,25 +50,25 @@ def normalize_arr(arr):
     print(sorted(arr)[0])
     return arr2
 
-def normalize_arr2(arr):
+def normalize_arr2(arr,f):
     # return arr
     arr2= (arr-sorted(arr)[1]) / (max(arr) - sorted(arr)[1])
     print((sorted(arr)[1],sum(arr)/len(arr),max(arr)))
-    print(sum(arr2)/len(arr2))
+    print((sum(arr2)/len(arr2),f))
     return arr2
 
 
 def spikes_data2imu_bands(spikes_data):
     return {
-        '1': sum(normalize_arr2(spikes_data[f])
+        '1': sum(normalize_arr2(spikes_data[f],f)
                     for f in ['0001.0']) / 1,
-        '2': sum(normalize_arr2(spikes_data[f])
+        '2': sum(normalize_arr2(spikes_data[f],f)
                  for f in ['001.93', '002.36'])/1,
-        '3': sum(normalize_arr2(spikes_data[f])
+        '3': sum(normalize_arr2(spikes_data[f],f)
                  for f in ['002.78', '003.28',])/ 2,
-        '4': sum(normalize_arr2(spikes_data[f])
+        '4': sum(normalize_arr2(spikes_data[f],f)
                  for f in ['0004.0', '004.72', '005.56', '006.56']) / 4,
-        '5': sum(normalize_arr2(spikes_data[f])
+        '5': sum(normalize_arr2(spikes_data[f],f)
                  for f in ['0008.0', '009.44', '011.12','015.44']) / 4
 
              }
@@ -228,31 +228,38 @@ def plot_single_signal_heatmap( trial, channel):
     example_spikes_channel = load_preprocessed_spikes(trial, channel)
     for f in ['0000.6', '0001.0', '001.39', '001.64', '001.93']:
         bin = (all_spikes2bins(example_spikes_channel, window=240))[f]
-        spikes_data[f] = bin
-        length = len(bin)
+        data_resampled = resample_signal(32, 1250, bin)
+        spikes_data[f] = data_resampled
+        # if len(data_resampled < length):
+        #     data_resampled = np.concatenate((data_resampled, (length - len(data_resampled)) * [0]))
+        # if len(data_resampled > length):
+        #     data_resampled = data_resampled[0:length]
+        # length = len(bin)
+
     for f in ['002.36', '002.78', '003.28', '003.86']:
         bin = (all_spikes2bins(example_spikes_channel, window=240))[f]
-        data_resampled = resample_signal(32, 128/2, bin)
-        if len(data_resampled<length):
-            data_resampled=np.concatenate((data_resampled,(length-len(data_resampled))*[0]))
-        if len(data_resampled>length):
-            data_resampled=data_resampled[0:length]
+        data_resampled = resample_signal(32, 1250, bin)
         spikes_data[f] = data_resampled
+        # if len(data_resampled<length):
+        #     data_resampled=np.concatenate((data_resampled,(length-len(data_resampled))*[0]))
+        # if len(data_resampled>length):
+        #     data_resampled=data_resampled[0:length]
+
     for f in ['0004.0', '004.72', '005.56', '006.56']:
         bin = (all_spikes2bins(example_spikes_channel, window=240))[f]
-        data_resampled = resample_signal(32, 128, bin)
-        if len(data_resampled<length):
-            data_resampled=np.concatenate((data_resampled,(length-len(data_resampled))*[0]))
-        if len(data_resampled>length):
-            data_resampled=data_resampled[0:length]
+        data_resampled = resample_signal(32, 1250, bin)
+        # if len(data_resampled<length):
+        #     data_resampled=np.concatenate((data_resampled,(length-len(data_resampled))*[0]))
+        # if len(data_resampled>length):
+        #     data_resampled=data_resampled[0:length]
         spikes_data[f] = data_resampled
     for f in ['0008.0', '009.44', '011.12', '013.12','015.44']:
         bin = (all_spikes2bins(example_spikes_channel, window=240))[f]
-        data_resampled = resample_signal(32, 128*2, bin)
-        if len(data_resampled<length):
-            data_resampled=np.concatenate((data_resampled,(length-len(data_resampled))*[0]))
-        if len(data_resampled>length):
-            data_resampled=data_resampled[0:length]
+        data_resampled = resample_signal(32, 1250, bin)
+        # if len(data_resampled<length):
+        #     data_resampled=np.concatenate((data_resampled,(length-len(data_resampled))*[0]))
+        # if len(data_resampled>length):
+        #     data_resampled=data_resampled[0:length]
         spikes_data[f] = data_resampled
 
     IMU_bands = spikes_data2imu_bands(spikes_data)
