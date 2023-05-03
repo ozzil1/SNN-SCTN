@@ -83,7 +83,7 @@ def get_EEG_data(data_root, filename):
 
 
 #data_root = '../datasets/EEG_data_for_Mental_Attention_State_Detection/EEG_Data/'
-#data_root = '../datasets/IMU_data/vector1/'
+data_root = '../datasets/IMU_data/vector1/'
 #files = os.listdir(data_root)
 
 
