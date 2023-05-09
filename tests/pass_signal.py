@@ -46,7 +46,7 @@ def pass_signal_through_resonators(channels,clk_resonators,path):
                 ch_data=ch_data/10 + 5
                 print(ch_data)
                 for clk_i, (clk_freq, list_of_f0) in enumerate(clk_resonators.items()): #we go through all clk_freq groups
-                    data_resampled = resample_signal(300_000, fs, ch_data)  # signal convert: frequency from sampled signal to clk frequency
+                    data_resampled = resample_signal(clk_freq, fs, ch_data)  # signal convert: frequency from sampled signal to clk frequency
                     spikes_folder = f'../datasets/IMU_data/{trial}/{ch_n}/{clk_freq}'      #folder path for saving dataset
                     if not os.path.exists(spikes_folder):
                         os.makedirs(spikes_folder)

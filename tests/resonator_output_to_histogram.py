@@ -52,8 +52,8 @@ def normalize_arr(arr):
 
 def normalize_arr2(arr,f):
     # return arr
-    arr2= (arr-sorted(arr)[1]) / (max(arr) - sorted(arr)[1])
-    print((sorted(arr)[1],sum(arr)/len(arr),max(arr)))
+    arr2= (arr-sorted(arr)[2]) / (max(arr) - sorted(arr)[2])
+    print((sorted(arr)[2],sum(arr)/len(arr),max(arr)))
     print((sum(arr2)/len(arr2),f))
     return arr2
 
@@ -61,16 +61,17 @@ def normalize_arr2(arr,f):
 def spikes_data2imu_bands(spikes_data):
     return {
         '1': sum(normalize_arr2(spikes_data[f],f)
-                    for f in ['0001.0']) / 1,
+                    for f in ['0000.6','0001.0','001.39']) / 3,
         '2': sum(normalize_arr2(spikes_data[f],f)
-                 for f in ['001.93', '002.36'])/1,
+                 for f in ['001.64','001.93', '002.36'])/3,
         '3': sum(normalize_arr2(spikes_data[f],f)
-                 for f in ['002.78', '003.28',])/ 2,
+                 for f in ['002.78', '003.28','003.86'])/3,
         '4': sum(normalize_arr2(spikes_data[f],f)
                  for f in ['0004.0', '004.72', '005.56', '006.56']) / 4,
         '5': sum(normalize_arr2(spikes_data[f],f)
-                 for f in ['0008.0', '009.44', '011.12','015.44']) / 4
-
+                 for f in ['0008.0', '009.44', '011.12']) / 3,
+        '6': sum(normalize_arr2(spikes_data[f], f)
+                 for f in ['013.12', '015.44']) / 2
              }
 
 def spikes_data2eeg_bands(spikes_data):
@@ -159,7 +160,7 @@ def plot_spectogram(IMU_data,channel):
             #IMU_bands = np.trim_zeros(IMU_bands,'b')
             print(np.array(IMU_bands))
 
-            f, t, Sxx = signal.spectrogram(IMU_bands, fs=(15360/2)/60)
+            f, t, Sxx = signal.spectrogram(IMU_bands, fs=(15360)/60)
             ax.pcolormesh(t, f, Sxx, shading='gouraud')
     plt.ylim(top=8)
     plt.yticks(np.arange(0,25,1))
@@ -196,25 +197,32 @@ def plot_single_signal_spectogram(trial,channel):
     example_spikes_channel = load_preprocessed_spikes(trial, channel)
     #IMU_bands=spikes_data2imu_bands(example_spikes_channel)
     for f in ['0000.6', '0001.0', '001.39', '001.64', '001.93']:
-        IMU_bands = (all_spikes2bins(example_spikes_channel, window=60))[f]
-        f, t, Sxx = signal.spectrogram(IMU_bands, fs=(15360/2)/60)
+        IMU_bands = (all_spikes2bins(example_spikes_channel, window=120))[f]
+        f, t, Sxx = signal.spectrogram(IMU_bands, fs=15360/120)
         Sxx_sum+=Sxx
 
     for f in ['002.36', '002.78', '003.28', '003.86']:
-        IMU_bands = (all_spikes2bins(example_spikes_channel, window=120))[f]
-        f, t, Sxx = signal.spectrogram(IMU_bands, fs=(30720/2)/120)
+        IMU_bands = (all_spikes2bins(example_spikes_channel, window=120*2))[f]
+        IMU_bands=IMU_bands/2
+        f, t, Sxx = signal.spectrogram(IMU_bands, fs=15360/120)
         Sxx_sum += Sxx
         #ax.pcolormesh(t, f, Sxx, shading='gouraud')
     for f in ['0004.0', '004.72', '005.56', '006.56','007.72']:
-        IMU_bands = (all_spikes2bins(example_spikes_channel, window=240))[f]
-        f, t, Sxx = signal.spectrogram(IMU_bands, fs=(61440/2)/240)
+        IMU_bands = (all_spikes2bins(example_spikes_channel, window=120*4))[f]
+        IMU_bands=IMU_bands/4
+        f, t, Sxx = signal.spectrogram(IMU_bands, fs=15360/120)
         Sxx_sum += Sxx
         #ax.pcolormesh(t, f, Sxx, shading='gouraud')
     for f in ['0008.0', '009.44', '011.12', '013.12','015.44']:
-        IMU_bands = (all_spikes2bins(example_spikes_channel, window=480))[f]
-        f, t, Sxx = signal.spectrogram(IMU_bands, fs=(122880/2)/480)
+        IMU_bands = (all_spikes2bins(example_spikes_channel, window=120*8))[f]
+        IMU_bands=IMU_bands/8
+        f, t, Sxx = signal.spectrogram(IMU_bands, fs=15360/120)
         Sxx_sum += Sxx
         #ax.pcolormesh(t, f, Sxx, shading='gouraud')
+    # Sxx_sum[:,0]=0
+    # Sxx_sum[:, 1] = 0
+    # Sxx_sum[:, 2] = 0
+    # print(Sxx_sum)
     ax.pcolormesh(t, f, Sxx_sum, shading='gouraud')
     plt.ylim(top=8)
     plt.yticks(np.arange(0,25,1))
@@ -227,39 +235,39 @@ def plot_single_signal_heatmap( trial, channel):
     spikes_data={}
     example_spikes_channel = load_preprocessed_spikes(trial, channel)
     for f in ['0000.6', '0001.0', '001.39', '001.64', '001.93']:
-        bin = (all_spikes2bins(example_spikes_channel, window=240))[f]
-        data_resampled = resample_signal(32, 1250, bin)
-        spikes_data[f] = data_resampled
+        bin = (all_spikes2bins(example_spikes_channel, window=120))[f]
+        #data_resampled = resample_signal(128, 125, bin)
+        spikes_data[f] = bin
         # if len(data_resampled < length):
         #     data_resampled = np.concatenate((data_resampled, (length - len(data_resampled)) * [0]))
         # if len(data_resampled > length):
         #     data_resampled = data_resampled[0:length]
-        # length = len(bin)
+        length = len(bin)
 
     for f in ['002.36', '002.78', '003.28', '003.86']:
-        bin = (all_spikes2bins(example_spikes_channel, window=240))[f]
-        data_resampled = resample_signal(32, 1250, bin)
+        bin = (all_spikes2bins(example_spikes_channel, window=120))[f]
+        data_resampled = resample_signal(128, 128*2, bin)
+        if len(data_resampled<length):
+            data_resampled=np.concatenate((data_resampled,(length-len(data_resampled))*[0]))
+        if len(data_resampled>length):
+            data_resampled=data_resampled[0:length]
         spikes_data[f] = data_resampled
-        # if len(data_resampled<length):
-        #     data_resampled=np.concatenate((data_resampled,(length-len(data_resampled))*[0]))
-        # if len(data_resampled>length):
-        #     data_resampled=data_resampled[0:length]
 
     for f in ['0004.0', '004.72', '005.56', '006.56']:
-        bin = (all_spikes2bins(example_spikes_channel, window=240))[f]
-        data_resampled = resample_signal(32, 1250, bin)
-        # if len(data_resampled<length):
-        #     data_resampled=np.concatenate((data_resampled,(length-len(data_resampled))*[0]))
-        # if len(data_resampled>length):
-        #     data_resampled=data_resampled[0:length]
+        bin = (all_spikes2bins(example_spikes_channel, window=120))[f]
+        data_resampled = resample_signal(128, 128*4, bin)
+        if len(data_resampled<length):
+            data_resampled=np.concatenate((data_resampled,(length-len(data_resampled))*[0]))
+        if len(data_resampled>length):
+            data_resampled=data_resampled[0:length]
         spikes_data[f] = data_resampled
     for f in ['0008.0', '009.44', '011.12', '013.12','015.44']:
-        bin = (all_spikes2bins(example_spikes_channel, window=240))[f]
-        data_resampled = resample_signal(32, 1250, bin)
-        # if len(data_resampled<length):
-        #     data_resampled=np.concatenate((data_resampled,(length-len(data_resampled))*[0]))
-        # if len(data_resampled>length):
-        #     data_resampled=data_resampled[0:length]
+        bin = (all_spikes2bins(example_spikes_channel, window=120))[f]
+        data_resampled = resample_signal(128, 128*8, bin)
+        if len(data_resampled<length):
+            data_resampled=np.concatenate((data_resampled,(length-len(data_resampled))*[0]))
+        if len(data_resampled>length):
+            data_resampled=data_resampled[0:length]
         spikes_data[f] = data_resampled
 
     IMU_bands = spikes_data2imu_bands(spikes_data)

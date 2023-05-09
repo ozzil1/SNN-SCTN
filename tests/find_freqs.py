@@ -5,7 +5,8 @@ from matplotlib import mlab
 from spicy import signal
 import os
 
-path = "../datasets/kaggle_data/tdcsfog/"
+#path = "../datasets/kaggle_data/tdcsfog/"
+path="../datasets/kaggle_data/signal/"
 
 def plot_fft_summed_input(path):
     i = 0
@@ -88,8 +89,9 @@ def plot_single_signal_spectogram_input(path,filename,ch_n):
     f = os.path.join(path, filename)
     data = pd.read_csv(f, index_col=0, compression='gzip')
     npArray = np.array(data)
-
+    print(data)
     sig1 = npArray[:, ch_n]
+    print(sig1)
     f, t, Sxx = signal.spectrogram(sig1, fs=128)
     ax.pcolormesh(t, f, Sxx, shading='gouraud')
 
@@ -99,7 +101,7 @@ def plot_single_signal_spectogram_input(path,filename,ch_n):
     plt.show()
 
 trial='0b2b9bc455.csv'
-plot_single_signal_spectogram_input(path,trial,1)
+plot_single_signal_spectogram_input(path,trial,2)
 #plot_spectogram_input(path,0)
 # plt.plot(fftfreq,fft2)
 # plt.plot(fftfreq,abs(fft1_sum))
