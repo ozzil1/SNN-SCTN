@@ -8,7 +8,7 @@ import os
 from tqdm import tqdm
 from pathlib import Path
 
-from snn.resonator import create_excitatory_inhibitory_resonator
+from snn.resonator import create_excitatory_inhibitory_resonator, create_excitatory_resonator
 
 path = "../datasets/kaggle_data/signal/"
 i = 0
@@ -43,7 +43,10 @@ def pass_signal_through_resonators(channels,clk_resonators,path):
             npArray = np.array(data)
             for ch_i, ch_n in enumerate(channels):                  #3 channels in IMU
                 ch_data = npArray[:, ch_i]                           #specific signal for the current channel
-                ch_data=ch_data/10 + 5
+                print(np.array(ch_data).mean())
+                ch_data-=np.array(ch_data).mean()
+                ch_data/=np.max(np.abs(ch_data))
+
                 print(ch_data)
                 for clk_i, (clk_freq, list_of_f0) in enumerate(clk_resonators.items()): #we go through all clk_freq groups
                     data_resampled = resample_signal(clk_freq, fs, ch_data)  # signal convert: frequency from sampled signal to clk frequency
@@ -56,7 +59,10 @@ def pass_signal_through_resonators(channels,clk_resonators,path):
                         spikes_file = f'{spikes_folder}/{f0}.npz'
                         if Path(spikes_file).is_file():
                             continue
-                        resonator = create_excitatory_inhibitory_resonator(                          #create the resonator to generate output of the signal through it
+                        # resonator = create_excitatory_inhibitory_resonator(                          #create the resonator to generate output of the signal through it
+                        #     freq0=f0,
+                        #     clk_freq=clk_freq)
+                        resonator= create_excitatory_resonator(                          #create the resonator to generate output of the signal through it
                             freq0=f0,
                             clk_freq=clk_freq)
                         resonator.log_out_spikes(-1)                                                 #the output is the last neuron's output

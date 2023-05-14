@@ -112,12 +112,14 @@ def resample_signal(f_new, f_source, data):
 
 
 def generate_spikes(resonator, data_resampled, spikes_output_path=None):
+
     output_neuron = resonator.layers_neurons[-1].neurons[-1]
+    resonator.input_full_data(np.zeros(resonator.clk_freq*5))
     resonator.input_full_data(data_resampled)
     if spikes_output_path is not None:
         np.savez_compressed(
             file=spikes_output_path,
-            spikes=output_neuron.out_spikes[:output_neuron.index]
+            spikes=output_neuron.out_spikes[(resonator.clk_freq*5):output_neuron.index]
         )
 
 

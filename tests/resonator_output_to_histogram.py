@@ -61,9 +61,9 @@ def normalize_arr2(arr,f):
 def spikes_data2imu_bands(spikes_data):
     return {
         '1': sum(normalize_arr2(spikes_data[f],f)
-                    for f in ['0000.6','0001.0','001.39']) / 3,
-        '2': sum(normalize_arr2(spikes_data[f],f)
-                 for f in ['001.64','001.93', '002.36'])/3,
+                    for f in ['0001.0','001.64']) / 2,
+         '2': sum(normalize_arr2(spikes_data[f],f)
+                  for f in ['001.93', '002.36'])/2,
         '3': sum(normalize_arr2(spikes_data[f],f)
                  for f in ['002.78', '003.28','003.86'])/3,
         '4': sum(normalize_arr2(spikes_data[f],f)
@@ -233,47 +233,87 @@ def plot_single_signal_spectogram(trial,channel):
 
 def plot_single_signal_heatmap( trial, channel):
     spikes_data={}
+    matrix = np.empty([18, 812])
+    f_list=[]
+    j=0
     example_spikes_channel = load_preprocessed_spikes(trial, channel)
-    for f in ['0000.6', '0001.0', '001.39', '001.64', '001.93']:
-        bin = (all_spikes2bins(example_spikes_channel, window=120))[f]
+    for f in {'0000.6', '0001.0', '001.39', '001.64', '001.93'}:
+        bin = (all_spikes2bins(example_spikes_channel, window=600))[f]
         #data_resampled = resample_signal(128, 125, bin)
+        matrix[j]=bin
+        f_list.append(f)
         spikes_data[f] = bin
+        print(f)
+        plt.plot(spikes_data[f])
+        plt.title(f'freq={f}')
+        plt.show()
+
         # if len(data_resampled < length):
         #     data_resampled = np.concatenate((data_resampled, (length - len(data_resampled)) * [0]))
         # if len(data_resampled > length):
         #     data_resampled = data_resampled[0:length]
         length = len(bin)
-
+        j+=1
     for f in ['002.36', '002.78', '003.28', '003.86']:
-        bin = (all_spikes2bins(example_spikes_channel, window=120))[f]
-        data_resampled = resample_signal(128, 128*2, bin)
-        if len(data_resampled<length):
-            data_resampled=np.concatenate((data_resampled,(length-len(data_resampled))*[0]))
-        if len(data_resampled>length):
-            data_resampled=data_resampled[0:length]
-        spikes_data[f] = data_resampled
+        bin = (all_spikes2bins(example_spikes_channel, window=1200))[f]
+        bin=bin/2
+        matrix[j] = bin
+        f_list.append(f)
+        j += 1
 
+        #data_resampled = resample_signal(64, 64*2, bin)
+        # if len(data_resampled<length):
+        #     data_resampled=np.concatenate((data_resampled,(length-len(data_resampled))*[0]))
+        # if len(data_resampled>length):
+        #     data_resampled=data_resampled[0:length]
+        spikes_data[f] = bin
+        print(f)
+        plt.plot(spikes_data[f])
+        plt.title(f'freq={f}')
+        plt.show()
     for f in ['0004.0', '004.72', '005.56', '006.56']:
-        bin = (all_spikes2bins(example_spikes_channel, window=120))[f]
-        data_resampled = resample_signal(128, 128*4, bin)
-        if len(data_resampled<length):
-            data_resampled=np.concatenate((data_resampled,(length-len(data_resampled))*[0]))
-        if len(data_resampled>length):
-            data_resampled=data_resampled[0:length]
-        spikes_data[f] = data_resampled
+        bin = (all_spikes2bins(example_spikes_channel, window=2400))[f]
+        bin=bin/4
+        matrix[j] = bin
+        f_list.append(f)
+        j += 1
+        # data_resampled = resample_signal(64, 64*4, bin)
+        # if len(data_resampled<length):
+        #     data_resampled=np.concatenate((data_resampled,(length-len(data_resampled))*[0]))
+        # if len(data_resampled>length):
+        #     data_resampled=data_resampled[0:length]
+        spikes_data[f] = bin
+        print(f)
+        plt.plot(spikes_data[f])
+        plt.title(f'freq={f}')
+        plt.show()
     for f in ['0008.0', '009.44', '011.12', '013.12','015.44']:
-        bin = (all_spikes2bins(example_spikes_channel, window=120))[f]
-        data_resampled = resample_signal(128, 128*8, bin)
-        if len(data_resampled<length):
-            data_resampled=np.concatenate((data_resampled,(length-len(data_resampled))*[0]))
-        if len(data_resampled>length):
-            data_resampled=data_resampled[0:length]
-        spikes_data[f] = data_resampled
+        bin = (all_spikes2bins(example_spikes_channel, window=4800))[f]
+        bin=bin/8
+        matrix[j] = bin
+        f_list.append(f)
+        j += 1
+        # data_resampled = resample_signal(64, 64*8, bin)
+        # if len(data_resampled<length):
+        #     data_resampled=np.concatenate((data_resampled,(length-len(data_resampled))*[0]))
+        # if len(data_resampled>length):
+        #     data_resampled=data_resampled[0:length]
+        spikes_data[f] = bin
+        print(f)
+        plt.plot(spikes_data[f])
+        plt.title(f'freq={f}')
+        plt.show()
+
+    fig, ax = plt.subplots()
+    ax.pcolormesh(np.arange(bin.size), f_list , matrix, shading='gouraud' )
+    plt.show()
+
+    #y_spikes = np.convolve(spikes_data['0001.0'], np.ones(1000, dtype=int), 'valid')
 
     IMU_bands = spikes_data2imu_bands(spikes_data)
     spikes_spectogram = spikes_dict2spectogram(IMU_bands)
     # bins = int(spikes_spectogram.shape[1])
-    plot_heatmap(spikes_spectogram, IMU_bands.keys(), annotate=False, title='Spikes spectogram')
+    #plot_heatmap(spikes_spectogram, IMU_bands.keys(), annotate=False, title='Spikes spectogram')
 
 def plot_single_signal_heatmap2(trial, channel):
     spikes_data = {}
@@ -314,7 +354,7 @@ def plot_single_signal_heatmap2(trial, channel):
 
 
 
-channel='AccV'
+channel='AccML'
 trial='0b2b9bc455.csv'   ######## working on this trial
 #plot_single_signal_spectogram(trial,channel)
 plot_single_signal_heatmap(trial,channel)
