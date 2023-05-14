@@ -112,7 +112,6 @@ def resample_signal(f_new, f_source, data):
 
 
 def generate_spikes(resonator, data_resampled, spikes_output_path=None):
-
     output_neuron = resonator.layers_neurons[-1].neurons[-1]
     resonator.input_full_data(np.zeros(resonator.clk_freq*5))
     resonator.input_full_data(data_resampled)

@@ -231,87 +231,47 @@ def plot_single_signal_spectogram(trial,channel):
 
 
 
-def plot_single_signal_heatmap( trial, channel):
+def plot_single_signal_heatmap( trial, channel, clk_resonators, min_window, plot_freq = False, mat_size=802):
     spikes_data={}
-    matrix = np.empty([18, 812])
+    matrix = np.empty([18, mat_size])
     f_list=[]
     j=0
-    example_spikes_channel = load_preprocessed_spikes(trial, channel)
-    for f in {'0000.6', '0001.0', '001.39', '001.64', '001.93'}:
-        bin = (all_spikes2bins(example_spikes_channel, window=600))[f]
-        #data_resampled = resample_signal(128, 125, bin)
-        matrix[j]=bin
-        f_list.append(f)
-        spikes_data[f] = bin
-        print(f)
-        plt.plot(spikes_data[f])
-        plt.title(f'freq={f}')
-        plt.show()
+    min_clk = 15360
+    example_spikes_channel = load_preprocessed_spikes(trial, channel )
 
-        # if len(data_resampled < length):
-        #     data_resampled = np.concatenate((data_resampled, (length - len(data_resampled)) * [0]))
-        # if len(data_resampled > length):
-        #     data_resampled = data_resampled[0:length]
-        length = len(bin)
-        j+=1
-    for f in ['002.36', '002.78', '003.28', '003.86']:
-        bin = (all_spikes2bins(example_spikes_channel, window=1200))[f]
-        bin=bin/2
-        matrix[j] = bin
-        f_list.append(f)
-        j += 1
+    for clk in clk_resonators:
+        for f in clk_resonators[clk]:
+            print(f)
+            bin = (all_spikes2bins(example_spikes_channel, window=int(min_window * (clk /min_clk))))[f]
+            # reshaped = np_data[:-240].reshape(-1, 600 * int(clk /min_clk))
+            # bin = reshaped.sum(axis=1)
+            #bin = (all_spikes2bins(example_spikes_channel, window=int((clk /min_clk))))[f]
+            bin = bin / (int(clk /min_clk))                                                     #normalize
+            bin = bin / np.mean(bin)
+            # bin = np.convolve(bin, np.ones(20, dtype=int), 'valid')
+            matrix[j]=bin[:-10]
+            j += 1
+            f_list.append(float(f))
+            spikes_data[f] = bin[:-10]
+            if plot_freq:
+                plt.plot(spikes_data[f])
+                plt.title(f'freq={f}')
+                plt.show()
+            bin = bin * float(f)
+            plt.plot(np.arange(len(bin[:-5])), bin[:-5], marker=',')
 
-        #data_resampled = resample_signal(64, 64*2, bin)
-        # if len(data_resampled<length):
-        #     data_resampled=np.concatenate((data_resampled,(length-len(data_resampled))*[0]))
-        # if len(data_resampled>length):
-        #     data_resampled=data_resampled[0:length]
-        spikes_data[f] = bin
-        print(f)
-        plt.plot(spikes_data[f])
-        plt.title(f'freq={f}')
-        plt.show()
-    for f in ['0004.0', '004.72', '005.56', '006.56']:
-        bin = (all_spikes2bins(example_spikes_channel, window=2400))[f]
-        bin=bin/4
-        matrix[j] = bin
-        f_list.append(f)
-        j += 1
-        # data_resampled = resample_signal(64, 64*4, bin)
-        # if len(data_resampled<length):
-        #     data_resampled=np.concatenate((data_resampled,(length-len(data_resampled))*[0]))
-        # if len(data_resampled>length):
-        #     data_resampled=data_resampled[0:length]
-        spikes_data[f] = bin
-        print(f)
-        plt.plot(spikes_data[f])
-        plt.title(f'freq={f}')
-        plt.show()
-    for f in ['0008.0', '009.44', '011.12', '013.12','015.44']:
-        bin = (all_spikes2bins(example_spikes_channel, window=4800))[f]
-        bin=bin/8
-        matrix[j] = bin
-        f_list.append(f)
-        j += 1
-        # data_resampled = resample_signal(64, 64*8, bin)
-        # if len(data_resampled<length):
-        #     data_resampled=np.concatenate((data_resampled,(length-len(data_resampled))*[0]))
-        # if len(data_resampled>length):
-        #     data_resampled=data_resampled[0:length]
-        spikes_data[f] = bin
-        print(f)
-        plt.plot(spikes_data[f])
-        plt.title(f'freq={f}')
-        plt.show()
+    # fig, ax = plt.subplots()
+    # ax.pcolormesh(np.arange(bin.size-10), f_list[:] , matrix[:][:], shading='gouraud' )
+    plt.yticks(f_list)
 
-    fig, ax = plt.subplots()
-    ax.pcolormesh(np.arange(bin.size), f_list , matrix, shading='gouraud' )
+    plt.legend(f_list, bbox_to_anchor=(1.04, 1), loc="upper left")
+
     plt.show()
 
     #y_spikes = np.convolve(spikes_data['0001.0'], np.ones(1000, dtype=int), 'valid')
 
-    IMU_bands = spikes_data2imu_bands(spikes_data)
-    spikes_spectogram = spikes_dict2spectogram(IMU_bands)
+    # IMU_bands = spikes_data2imu_bands(spikes_data)
+    # spikes_spectogram = spikes_dict2spectogram(IMU_bands)
     # bins = int(spikes_spectogram.shape[1])
     #plot_heatmap(spikes_spectogram, IMU_bands.keys(), annotate=False, title='Spikes spectogram')
 
@@ -354,10 +314,21 @@ def plot_single_signal_heatmap2(trial, channel):
 
 
 
-channel='AccML'
+channel='AccAP'
+clk_resonators = {
+    # 15360: ['0.6', '1.0', '1.39', '1.64', '1.93'],
+    # 30720: ['2.36','2.78','3.28','3.86'],
+    # 61440: ['4.0','4.72','5.56','6.56','7.72'],
+    # 122880: ['8.0','9.44','11.12','13.12', '15.44'],
+    15360: ['0000.6', '0001.0', '001.39', '001.64', '001.93'],
+    30720: ['002.36', '002.78', '003.28', '003.86'],
+    61440: ['0004.0', '004.72', '005.56', '006.56'],
+    122880: ['0008.0', '009.44', '011.12', '013.12','015.44']
+}
+
 trial='0b2b9bc455.csv'   ######## working on this trial
 #plot_single_signal_spectogram(trial,channel)
-plot_single_signal_heatmap(trial,channel)
+plot_single_signal_heatmap(trial,channel, clk_resonators, min_window=600)#, plot_freq = True)
 
 
 

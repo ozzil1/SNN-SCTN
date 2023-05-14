@@ -95,13 +95,15 @@ def plot_single_signal_spectogram_input(path,filename,ch_n):
     f, t, Sxx = signal.spectrogram(sig1, fs=128)
     ax.pcolormesh(t, f, Sxx, shading='gouraud')
 
-    plt.ylim(top=8)
-    plt.yticks(np.arange(0, 25, 1))
+    plt.ylim(top=15)
+    plt.yticks(np.arange(0, 15, 1))
     #plt.xlim(left=0, right=100)
     plt.show()
 
 trial='0b2b9bc455.csv'
-plot_single_signal_spectogram_input(path,trial,2)
+
+
+plot_single_signal_spectogram_input(path,trial,3)
 #plot_spectogram_input(path,0)
 # plt.plot(fftfreq,fft2)
 # plt.plot(fftfreq,abs(fft1_sum))
