@@ -15,7 +15,7 @@
 *.npy
 *.wav
 *.raw
-
+*.npz
 secret.yaml
 
 .membrane_potential
