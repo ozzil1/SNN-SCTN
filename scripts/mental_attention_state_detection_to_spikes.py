@@ -111,15 +111,15 @@ def resample_signal(f_new, f_source, data):
     return resample(data, n_samples_new)
 
 
-def generate_spikes(resonator, data_resampled, spikes_output_path=None):
-    output_neuron = resonator.layers_neurons[-1].neurons[-1]
-    resonator.input_full_data(np.zeros(resonator.clk_freq*5))
+def generate_spikes(resonator, data_resampled, append_with_zeros=True):
     resonator.input_full_data(data_resampled)
-    if spikes_output_path is not None:
-        np.savez_compressed(
-            file=spikes_output_path,
-            spikes=output_neuron.out_spikes[(resonator.clk_freq*5):output_neuron.index]
-        )
+
+def save_output(resonator, spikes_output_path):
+    output_neuron = resonator.layers_neurons[-1].neurons[-1]
+    np.savez_compressed(
+        file=spikes_output_path,
+        spikes=output_neuron.out_spikes()
+    )
 
 
 
@@ -155,6 +155,11 @@ def generate_spikes(resonator, data_resampled, spikes_output_path=None):
 #                 file=f'{output_path}/{file_name}',
 #                 spikes=spikes[:, :, sample_start_time:sample_start_time + spikes_in_sample]
 #             )
+
+def is_file_exist(path: str):
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    return path.is_file()
 
 
 # clk_resonators = {
