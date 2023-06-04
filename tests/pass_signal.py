@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-from scripts.mental_attention_state_detection_to_spikes import resample_signal , generate_spikes
+from scripts.mental_attention_state_detection_to_spikes import resample_signal , generate_spikes , save_output
 import pandas as pd
 import numpy as np
 from matplotlib import mlab
@@ -10,7 +10,7 @@ from pathlib import Path
 
 from snn.resonator import create_excitatory_inhibitory_resonator, create_excitatory_resonator
 
-path = "../datasets/kaggle_data/signal/"
+path = "../datasets/kaggle_data/labeling/"
 i = 0
 fig, ax = plt.subplots()
 
@@ -31,6 +31,43 @@ n_resonators =19
 
 ###we create a resonator in each iteration maybe its wastefull, and we rather create a resonator and work on it till we finish with it.
 def pass_signal_through_resonators(channels,clk_resonators,path):
+    n_trials = 803
+    n_channels = len(channels)
+    n_resonators = 4
+    with tqdm(total=n_channels * n_resonators * n_trials) as pbar:  #tqdm shows proccess precentage
+        for trial in os.listdir(path):                              #each trial is each experiment in the dataset
+            f = os.path.join(path, trial)
+            data = pd.read_csv(f, index_col=0, compression='gzip')
+            print(data['AccV'])
+            npArray = np.array(data)
+            for ch_i, ch_n in enumerate(channels):                  #3 channels in IMU
+                ch_data = npArray[:, ch_i]                           #specific signal for the current channel
+                print(np.array(ch_data).mean())
+                ch_data-=np.array(ch_data).mean()
+                ch_data/=np.max(np.abs(ch_data))
+
+                print(ch_data)
+                for clk_i, (clk_freq, list_of_f0) in enumerate(clk_resonators.items()): #we go through all clk_freq groups
+                    data_resampled = resample_signal(clk_freq, fs, ch_data)  # signal convert: frequency from sampled signal to clk frequency
+                    spikes_folder = f'../datasets/IMU_data/{trial}/{ch_n}/{clk_freq}'      #folder path for saving dataset
+                    if not os.path.exists(spikes_folder):
+                        os.makedirs(spikes_folder)
+                    for f_i, f0 in enumerate(list_of_f0):                                #we go through all resonator frequency in each clk_freq group
+                        pbar.set_description(f',trial: {trial}, ch: {ch_n}, clk {clk_freq} , f:{f0}')  #tqdm shows proccess precentage
+                        pbar.update()
+                        spikes_file = f'{spikes_folder}/{f0}.npz'
+                        if Path(spikes_file).is_file():
+                            continue
+                        # resonator = create_excitatory_inhibitory_resonator(                          #create the resonator to generate output of the signal through it
+                        #     freq0=f0,
+                        #     clk_freq=clk_freq)
+                        resonator= create_excitatory_resonator(                          #create the resonator to generate output of the signal through it
+                            freq0=f0,
+                            clk_freq=clk_freq)
+                        resonator.log_out_spikes(-1)                                                 #the output is the last neuron's output
+                        generate_spikes(resonator, data_resampled, spikes_file)            #save the output through current resonator in datasets
+
+def pass_signal_through_resonators2(channels,clk_resonators,path):
     n_trials = 803
     n_channels = len(channels)
     n_resonators = 4
@@ -64,38 +101,16 @@ def pass_signal_through_resonators(channels,clk_resonators,path):
                             freq0=f0,
                             clk_freq=clk_freq)
                         resonator.log_out_spikes(-1)                                                 #the output is the last neuron's output
-                        generate_spikes(resonator, data_resampled, spikes_file)            #save the output through current resonator in datasets
-
-def pass_signal_through_resonators2(channels,clk_resonators,path):
-    n_trials = 803
-    n_channels = len(channels)
-    n_resonators =19
-    with tqdm(total=n_channels * n_resonators * n_trials) as pbar:  #tqdm shows proccess precentage
-        for clk_i, (clk_freq, list_of_f0) in enumerate(clk_resonators.items()): #we go through all clk_freq groups
-            for f_i, f0 in enumerate(list_of_f0):                                #we go through all resonator frequency in each clk_freq group
-                resonator = create_excitatory_inhibitory_resonator(                          #create the resonator to generate output of the signal through it
-                    freq0=f0,
-                    clk_freq=clk_freq)
-                resonator.log_out_spikes(-1)                                                 #the output is the last neuron's output
-                for trial in os.listdir(path):  # each trial is each experiment in the dataset
-                    f = os.path.join(path, trial)
-                    data = pd.read_csv(f, index_col=0, compression='gzip')
-                    npArray = np.array(data)
-                    for ch_i, ch_n in enumerate(channels):  # 3 channels in IMU
-                        pbar.set_description(f',trial: {trial}, ch: {ch_n}, clk {clk_freq} ,f:{f0}')  # tqdm shows proccess precentage
-                        pbar.update()
-                        spikes_folder = f'../datasets/IMU_data/{trial}/{ch_n}/{clk_freq}'  # folder path for saving dataset
-                        if not os.path.exists(spikes_folder):
-                            os.makedirs(spikes_folder)
-                        spikes_file = f'{spikes_folder}/{f0}.npz'
-                        if Path(spikes_file).is_file():
-                            continue
-                        ch_data = npArray[:, ch_i]  # specific signal for the current channel
-                        data_resampled = resample_signal(clk_freq / 2, fs, ch_data)  # signal convert: frequency from sampled signal to clk frequency
-                        generate_spikes(resonator, data_resampled, spikes_file)            #save the output through current resonator in datasets
+                        output_neuron = resonator.layers_neurons[-1].neurons[-1]
+                        resonator.input_full_data(np.zeros(resonator.clk_freq * 5))
+                        output_neuron.forget_logs()
+                        # generate_spikes(resonator, data_resampled, spikes_file)            #save the output through current resonator in datasets
+                        resonator.input_full_data(data_resampled)
+                        save_output(resonator, spikes_file)
+                        output_neuron.forget_logs()
 
 
-pass_signal_through_resonators(channels,clk_resonators,path)
+pass_signal_through_resonators2(channels,clk_resonators,path)
 #
 # path = "C:\\Program Files (x86)\project\\tdcsfog"
 # first = True

@@ -82,17 +82,17 @@ def get_EEG_data(data_root, filename):
     return dat
 
 
-data_root = '../datasets/EEG_data_for_Mental_Attention_State_Detection/EEG_Data/'
-files = os.listdir(data_root)
+# data_root = '../datasets/EEG_data_for_Mental_Attention_State_Detection/EEG_Data/'
+# files = os.listdir(data_root)
 
 
-def get_trial_data(trial):
-    dat = get_EEG_data(data_root, f'eeg_record{trial}.mat')
-    return dat
+# def get_trial_data(trial):
+#     dat = get_EEG_data(data_root, f'eeg_record{trial}.mat')
+#     return dat
 
 
-example_data = get_trial_data(1)
-channel_names = example_data.columns
+# example_data = get_trial_data(1)
+# channel_names = example_data.columns
 
 # 5 subjects, each subject did 7 trials. except the 5'th subject that did 6 trials.
 #  The first 2 trials were used to get familiar with the process.
@@ -112,6 +112,7 @@ def resample_signal(f_new, f_source, data):
 
 def generate_spikes(resonator, data_resampled, append_with_zeros=True):
     resonator.input_full_data(data_resampled)
+
 
 def save_output(resonator, spikes_output_path):
     output_neuron = resonator.layers_neurons[-1].neurons[-1]
@@ -186,13 +187,13 @@ trails = [
         31,32,33,34
     ]
 
-print('Find constant normalization value!')
-normalization_value = -np.inf
-for trial in trails:
-    data = get_trial_data(trial)
-    for ch_i, ch in enumerate(data.columns):
-        ch_data = data[ch].values
-        normalization_value = np.max([normalization_value, np.max(np.abs(ch_data))])
+# print('Find constant normalization value!')
+# normalization_value = -np.inf
+# for trial in trails:
+#     data = get_trial_data(trial)
+#     for ch_i, ch in enumerate(data.columns):
+#         ch_data = data[ch].values
+#         normalization_value = np.max([normalization_value, np.max(np.abs(ch_data))])
 
 
 channels = [
@@ -220,35 +221,35 @@ minutes_range = {
     'unfocus': [13,14,15,16,17,18,19],
     'drowsed': [23, 24,25,26,27,28,29],
 }
-print(channels)
-total_minutes = sum(map(len, minutes_range.values()))
-with tqdm(total=n_channels * len(trails) * n_resonators * total_minutes) as pbar:
-    for trial in trails:
-        data = get_trial_data(trial)
-        for ch_i, ch in enumerate(channels):
-            ch_data = data[ch].values
-            # Take only first 30 minutes.
-            ch_data = ch_data[:fs * (60 * 30)]
-            ch_data /= normalization_value
-            for clk_i, (clk_freq, list_of_f0) in enumerate(clk_resonators.items()):
-                for f_i, f0 in enumerate(list_of_f0):
-                    resonator = create_excitatory_inhibitory_resonator(
-                        freq0=f0,
-                        clk_freq=clk_freq)
-
-                    resonator.log_out_spikes(-1)
-                    output_neuron = resonator.layers_neurons[-1].neurons[-1]
-                    resonator.input_full_data(np.zeros(resonator.clk_freq * 5))
-                    output_neuron.forget_logs()
-                    # minute by minute input the data.
-                    for label, labeled_minutes_range in minutes_range.items():
-                        for m in labeled_minutes_range:
-                            output_folder = f'../datasets/EEG_data_for_Mental_Attention_State_Detection/EEG_spikes_clk/{trial}/{label}/{m}/{ch}/{clk_freq}/{f0}.npz'
-                            if not is_file_exist(output_folder):
-                                data_resampled = resample_signal(clk_freq, fs, ch_data[fs * m * 60: fs * (m+1) * 60])
-                                resonator.input_full_data(data_resampled)
-                            save_output(resonator, output_folder)
-                            output_neuron.forget_logs()
-                            pbar.update()
+# print(channels)
+# total_minutes = sum(map(len, minutes_range.values()))
+# with tqdm(total=n_channels * len(trails) * n_resonators * total_minutes) as pbar:
+#     for trial in trails:
+#         data = get_trial_data(trial)
+#         for ch_i, ch in enumerate(channels):
+#             ch_data = data[ch].values
+#             # Take only first 30 minutes.
+#             ch_data = ch_data[:fs * (60 * 30)]
+#             ch_data /= normalization_value
+#             for clk_i, (clk_freq, list_of_f0) in enumerate(clk_resonators.items()):
+#                 for f_i, f0 in enumerate(list_of_f0):
+#                     resonator = create_excitatory_inhibitory_resonator(
+#                         freq0=f0,
+#                         clk_freq=clk_freq)
+#
+#                     resonator.log_out_spikes(-1)
+#                     output_neuron = resonator.layers_neurons[-1].neurons[-1]
+#                     resonator.input_full_data(np.zeros(resonator.clk_freq * 5))
+#                     output_neuron.forget_logs()
+#                     # minute by minute input the data.
+#                     for label, labeled_minutes_range in minutes_range.items():
+#                         for m in labeled_minutes_range:
+#                             output_folder = f'../datasets/EEG_data_for_Mental_Attention_State_Detection/EEG_spikes_clk/{trial}/{label}/{m}/{ch}/{clk_freq}/{f0}.npz'
+#                             if not is_file_exist(output_folder):
+#                                 data_resampled = resample_signal(clk_freq, fs, ch_data[fs * m * 60: fs * (m+1) * 60])
+#                                 resonator.input_full_data(data_resampled)
+#                             save_output(resonator, output_folder)
+#                             output_neuron.forget_logs()
+#                             pbar.update()
 
 # create_datasets(3, .5, range(31, 35), '../datasets/EEG_data_for_Mental_Attention_State_Detection/train_test_dataset')
